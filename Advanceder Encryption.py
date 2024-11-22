@@ -1,13 +1,11 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.fernet import Fernet
-import os
 import base64
-import hashlib
+import os
 
-# bruh i had to
 class AdvancedEncryptionApp:
     def __init__(self, root):
         self.root = root
@@ -34,16 +32,16 @@ class AdvancedEncryptionApp:
                                         command=self.encryptandsave, 
                                         relief="raised", bd=2)
         self.encryptbutton.pack(pady=10, ipadx=10, ipady=5)
-        self.decryptbutton = tk.Button(root, text="Open & Decrypt .jonsnow", 
+
+        self.decryptbutton = tk.Button(root, text="Decrypt .jonsnow", 
                                         font=("Helvetica", 12, "bold"), 
                                         bg="#99aab5", fg="black", 
-                                        command=self.openanddecrypt, 
-                                        relief="raised", bd=2)
+                                        relief="raised", bd=2, command=self.decryptfile)
         self.decryptbutton.pack(pady=10, ipadx=10, ipady=5)
-    # its so annoying to do
+
     def derivekey(self, passphrase):
-        salt = b"salt"  #hopefully use a unique salt for each encryption
-        kdf = PBKDF2HMAC( #this kdf just makes your passkey into the most absurdly radical hash kinda (summarized)
+        salt = b"salt"  # hopefully use a unique salt for each encryption
+        kdf = PBKDF2HMAC(  # this kdf just makes your passkey into the most absurdly radical hash kinda (summarized)
             algorithm=hashes.SHA256(), 
             length=32,  # length of the generated key
             salt=salt,
@@ -77,32 +75,46 @@ class AdvancedEncryptionApp:
             messagebox.showinfo("Success", "File encrypted and saved successfully!")
 
         self.textbox.delete("1.0", tk.END)
+        # self.passphrase_entry.delete("1.0", tk.END) #this doesnt work fors oem reason
 
-    def openanddecrypt(self):
-        filepath = filedialog.askopenfilename(filetypes=[("JONSNOW Files", "*.jonsnow")])
+    def decryptfile(self):
+        filepath = filedialog.askopenfilename(defaultextension=".jonsnow", 
+                                              filetypes=[("JONSNOW Files", "*.jonsnow")])
         if not filepath:
+            messagebox.showwarning("Warning", "No file selected!")
             return
 
+        # the box to ask foer password aftrer
+        while True:
+            passphrase = simpledialog.askstring("Passphrase", "Enter your passphrase:", show="*")
+            if not passphrase:
+                messagebox.showwarning("Warning", "Passphrase is required for decryption!")
+                return
+
+            success = self.openanddecrypt(filepath, passphrase)
+            if success:
+                break
+            else:
+                retry = messagebox.askretrycancel("Invalid Passphrase", "The passphrase is incorrect. Try again?")
+                if not retry:
+                    break
+
+    def openanddecrypt(self, filepath, passphrase):
         try:
             with open(filepath, 'rb') as file:
                 encrypted_text = file.read()
 
-            passphrase = self.passphrase_entry.get()
-            if not passphrase:
-                messagebox.showwarning("Warning", "Make sure you put your passphrase in before decryption!")
-                return
-            
             key = self.derivekey(passphrase)
             fernet = Fernet(key)
 
-    
             decrypted_text = fernet.decrypt(encrypted_text).decode()
 
             self.textbox.delete("1.0", tk.END)
             self.textbox.insert(tk.END, decrypted_text)
             messagebox.showinfo("Decryption", "File decrypted")
+            return True
         except Exception as e:
-            messagebox.showerror("Error", f"Decryption failed: {str(e)}")
+            return False
 
 if __name__ == "__main__":
     root = tk.Tk()
