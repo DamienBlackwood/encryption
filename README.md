@@ -101,7 +101,7 @@ pip install cryptography tkinter
 - Secure memory clearing
 
 ## Disclaimer
-This is a personal encryption tool so please, for high-stakes security, consult professional encryption solutions!
+This is a personal encryption tool so please that I just made for funsies so please, if it its anything serious consider upgrading this or using another method!
 
 ## License
 MIT License
